@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Expense Tracker</title>
+<style>
+  :root {
+    --primary: #2563eb;
+    --danger: #ef4444;
+    --success: #10b981;
+    --bg: #f8fafc;
+    --card-bg: #ffffff;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text-main);
+    margin: 0;
+    padding: 20px;
+  }
+
+  header {
+    max-width: 900px;
+    margin: 0 auto 25px auto;
+    text-align: center;
+  }
+
+  header h1 {
+    color: var(--primary);
+    margin-bottom: 5px;
+  }
+
+  header p {
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  section {
+    max-width: 900px;
+    margin: 0 auto 25px auto;
+  }
+
+  /* ===== Grid untuk Statistik ===== */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+  }
+
+  .stat-card {
+    background: var(--card-bg);
+    border-left: 4px solid var(--primary);
+    border-radius: 8px;
+    padding: 15px 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  .stat-card.budget { border-left-color: var(--success); }
+  .stat-card.budget.over { border-left-color: var(--danger); }
+
+  .stat-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    margin-top: 4px;
+  }
+
+  .stat-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  /* ===== Grid untuk Form ===== */
+  .form-container {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr auto;
+    gap: 15px;
+    align-items: end;
+  }
+
+  .form-group { display: flex; flex-direction: column; }
+
+  .form-group label {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: var(--text-muted);
+  }
+
+  .form-group input,
+  .form-group select {
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  /* Toggle jenis transaksi */
+  .type-toggle {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .type-toggle button {
+    flex: 1;
+    border: none;
+    background: #fff;
+    padding: 10px 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-muted);
+  }
+  .type-toggle button.active-out {
+    background: var(--danger);
+    color: #fff;
+  }
+  .type-toggle button.active-in {
+    background: var(--success);
+    color: #fff;
+  }
+
+  .btn-primary, .btn-cancel {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-cancel { background: var(--border); color: var(--text-main); display: none; margin-left: 8px; }
+
+  /* Responsif untuk HP */
+  @media (max-width: 768px) {
+    .form-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ===== Tabel ===== */
+  .table-container {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 10px 20px 20px 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    overflow-x: auto;
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  th, td {
+    text-align: left;
+    padding: 10px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+
+  th { color: var(--text-muted); font-size: 12px; text-transform: uppercase; }
+
+  .empty-state { text-align: center; color: var(--text-muted); padding: 20px; }
+
+  .amount-in { color: var(--success); font-weight: 600; }
+  .amount-out { color: var(--danger); font-weight: 600; }
+
+  .badge {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: #fff;
+  }
+  .badge-makan { background: #f59e0b; }
+  .badge-transport { background: #3b82f6; }
+  .badge-kuota { background: #8b5cf6; }
+  .badge-lainnya { background: #64748b; }
+  .badge-uangsaku, .badge-pemasukan { background: #10b981; }
+
+  .action-btn {
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-right: 5px;
+  }
+  .btn-edit { background: #e0e7ff; color: var(--primary); }
+  .btn-delete { background: #fee2e2; color: var(--danger); }
+</style>
+</head>
+<body>
+
+  <header>
+    <h1>Student Expense Tracker</h1>
+    <p>Kelola keuangan bulanan Anda dengan lebih mudah dan terarah</p>
+  </header>
+
+  <!-- 1. STATISTIK SECTION -->
+  <section class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Pengeluaran Hari Ini</div>
+      <div class="stat-value" id="stat-today">Rp 0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Pengeluaran Bulan Ini</div>
+      <div class="stat-value" id="stat-month">Rp 0</div>
+    </div>
+    <div class="stat-card budget" id="card-budget">
+      <div class="stat-label">Sisa Anggaran (Awal Rp 1.500.000)</div>
+      <div class="stat-value" id="stat-budget">Rp 0</div>
+      <div class="stat-sub" id="stat-income-sub">+ Rp 0 pemasukan bulan ini</div>
+    </div>
+  </section>
+
+  <!-- 2. FORM SECTION -->
+  <section class="form-container">
+    <form id="expense-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="desc">Deskripsi</label>
+          <input type="text" id="desc" placeholder="Cth: Makan siang / Uang saku" required>
+        </div>
+        <div class="form-group">
+          <label for="amount">Nominal (Rp)</label>
+          <input type="number" id="amount" placeholder="50000" min="1" required>
+        </div>
+        <div class="form-group">
+          <label>Jenis</label>
+          <div class="type-toggle">
+            <button type="button" id="btn-type-out" class="active-out">Pengeluaran</button>
+            <button type="button" id="btn-type-in">Pemasukan</button>
+          </div>
+          <input type="hidden" id="type" value="out">
+        </div>
+        <div class="form-group">
+          <label for="category">Kategori</label>
+          <select id="category" required>
+            <option value="Makan">Makan</option>
+            <option value="Transport">Transport</option>
+            <option value="Kuota">Kuota</option>
+            <option value="Uang Saku">Uang Saku</option>
+            <option value="Lainnya">Lainnya</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>&nbsp;</label>
+          <div>
+            <button type="submit" class="btn-primary" id="btn-submit">Tambah</button>
+            <button type="button" class="btn-cancel" id="btn-cancel">Batal</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hidden field untuk menyimpan ID saat mode Edit -->
+      <input type="hidden" id="edit-id">
+    </form>
+  </section>
+
+  <!-- 3. TABLE SECTION -->
+  <section class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Tanggal</th>
+          <th>Deskripsi</th>
+          <th>Kategori</th>
+          <th>Nominal</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="expense-list">
+        <tr>
+          <td colspan="5" class="empty-state">Memuat data...</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 4. FIREBASE & LOGIC -->
+  <script type="module">
+    // 1. IMPOR FUNGSI YANG DIBUTUHKAN DARI CDN
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore, collection, addDoc, onSnapshot,
+      deleteDoc, doc, updateDoc, serverTimestamp, query, orderBy
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // 2. KONFIGURASI FIREBASE (GANTI DENGAN PUNYA ANDA)
+    const firebaseConfig = {
+      apiKey: "PASTE_API_KEY_ANDA",
+      authDomain: "PASTE_AUTH_DOMAIN_ANDA",
+      projectId: "PASTE_PROJECT_ID_ANDA",
+      storageBucket: "PASTE_STORAGE_BUCKET_ANDA",
+      messagingSenderId: "PASTE_SENDER_ID_ANDA",
+      appId: "PASTE_APP_ID_ANDA"
+    };
+
+    // 3. INISIALISASI APLIKASI
+    const app = initializeApp(firebaseConfig);
+
+    // 4. INISIALISASI FIRESTORE & REFERENSI KOLEKSI
+    const db = getFirestore(app);
+    const expensesCollection = collection(db, "expenses");
+
+    console.log("Firebase berhasil dihubungkan!");
+
+    const BUDGET_AWAL = 1500000;
+
+    // Format Rupiah
+    const formatRupiah = (angka) =>
+      new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+
+    // ===== Toggle Jenis Transaksi (Pemasukan / Pengeluaran) =====
+    const btnTypeOut = document.getElementById('btn-type-out');
+    const btnTypeIn = document.getElementById('btn-type-in');
+    const typeInput = document.getElementById('type');
+    const categorySelect = document.getElementById('category');
+
+    function setType(type) {
+      typeInput.value = type;
+      if (type === 'in') {
+        btnTypeIn.classList.add('active-in');
+        btnTypeOut.classList.remove('active-out');
+        categorySelect.value = 'Uang Saku';
+      } else {
+        btnTypeOut.classList.add('active-out');
+        btnTypeIn.classList.remove('active-in');
+        if (categorySelect.value === 'Uang Saku') categorySelect.value = 'Lainnya';
+      }
+    }
+    btnTypeOut.addEventListener('click', () => setType('out'));
+    btnTypeIn.addEventListener('click', () => setType('in'));
+
+    // Query urutkan berdasarkan waktu terbaru
+    const q = query(expensesCollection, orderBy("createdAt", "desc"));
+
+    onSnapshot(q, (snapshot) => {
+      const list = document.getElementById('expense-list');
+      list.innerHTML = ''; // Kosongkan tabel sebelum render ulang
+
+      let totalExpenseMonth = 0;
+      let totalIncomeMonth = 0;
+      let totalExpenseToday = 0;
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+
+      if (snapshot.empty) {
+        list.innerHTML = '<tr><td colspan="5" class="empty-state">Belum ada data.</td></tr>';
+      }
+
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        const id = docSnap.id;
+        const expDate = data.createdAt?.toDate() || new Date();
+        // Data lama tanpa field "type" tetap dianggap Pengeluaran (backward compatible)
+        const type = data.type === 'in' ? 'in' : 'out';
+
+        const isThisMonth = expDate.getMonth() === currentMonth && expDate.getFullYear() === currentYear;
+
+        if (isThisMonth) {
+          if (type === 'in') {
+            totalIncomeMonth += data.amount;
+          } else {
+            totalExpenseMonth += data.amount;
+          }
+        }
+
+        // Hitung statistik hari ini (khusus pengeluaran)
+        if (type === 'out' && expDate.toDateString() === now.toDateString()) {
+          totalExpenseToday += data.amount;
+        }
+
+        // Render baris tabel
+        const badgeClass = data.category.toLowerCase().replace(/\s+/g, '');
+        const sign = type === 'in' ? '+' : '-';
+        const amountClass = type === 'in' ? 'amount-in' : 'amount-out';
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${expDate.toLocaleDateString('id-ID')}</td>
+          <td>${data.description}</td>
+          <td><span class="badge badge-${badgeClass}">${data.category}</span></td>
+          <td class="${amountClass}">${sign} ${formatRupiah(data.amount)}</td>
+          <td>
+            <button class="action-btn btn-edit" onclick="window.editExpense('${id}', '${data.description}', ${data.amount}, '${data.category}', '${type}')">Edit</button>
+            <button class="action-btn btn-delete" onclick="window.deleteExpense('${id}')">Hapus</button>
+          </td>
+        `;
+        list.appendChild(row);
+      });
+
+      // Update UI Statistik
+      // Sisa anggaran = budget awal + total pemasukan (uang saku dll) - total pengeluaran bulan ini
+      const remaining = BUDGET_AWAL + totalIncomeMonth - totalExpenseMonth;
+      document.getElementById('stat-today').textContent = formatRupiah(totalExpenseToday);
+      document.getElementById('stat-month').textContent = formatRupiah(totalExpenseMonth);
+      document.getElementById('stat-budget').textContent = formatRupiah(remaining);
+      document.getElementById('stat-income-sub').textContent = `+ ${formatRupiah(totalIncomeMonth)} pemasukan bulan ini`;
+
+      // Cek defisit
+      const budgetCard = document.getElementById('card-budget');
+      if (remaining < 0) budgetCard.classList.add('over');
+      else budgetCard.classList.remove('over');
+    });
+
+    // 1. HANDLE FORM SUBMIT (CREATE / UPDATE)
+    document.getElementById('expense-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const desc = document.getElementById('desc').value;
+      const amount = Number(document.getElementById('amount').value);
+      const category = document.getElementById('category').value;
+      const type = document.getElementById('type').value;
+      const editId = document.getElementById('edit-id').value;
+
+      try {
+        if (editId) {
+          // MODE UPDATE
+          await updateDoc(doc(db, "expenses", editId), {
+            description: desc, amount: amount, category: category, type: type
+          });
+        } else {
+          // MODE CREATE
+          await addDoc(expensesCollection, {
+            description: desc, amount: amount, category: category, type: type,
+            createdAt: serverTimestamp()
+          });
+        }
+        resetForm(); // Bersihkan form setelah sukses
+      } catch (error) {
+        console.error("Error: ", error);
+        alert("Gagal menyimpan data.");
+      }
+    });
+
+    // 2. FUNGSI DELETE (Harus global agar bisa dipanggil onclick di HTML)
+    window.deleteExpense = async (id) => {
+      if (confirm("Yakin ingin menghapus data ini?")) {
+        await deleteDoc(doc(db, "expenses", id));
+      }
+    };
+
+    // 3. FUNGSI EDIT (Mengisi form dengan data yang ada)
+    window.editExpense = (id, desc, amount, category, type) => {
+      document.getElementById('desc').value = desc;
+      document.getElementById('amount').value = amount;
+      document.getElementById('category').value = category;
+      document.getElementById('edit-id').value = id; // Kunci mode edit!
+      setType(type);
+
+      document.getElementById('btn-submit').textContent = 'Update';
+      document.getElementById('btn-cancel').style.display = 'inline-block';
+    };
+
+    // 4. RESET FORM
+    function resetForm() {
+      document.getElementById('expense-form').reset();
+      document.getElementById('edit-id').value = '';
+      document.getElementById('btn-submit').textContent = 'Tambah';
+      document.getElementById('btn-cancel').style.display = 'none';
+      setType('out');
+    }
+
+    document.getElementById('btn-cancel').addEventListener('click', resetForm);
+  </script>
+</body>
+</html>
